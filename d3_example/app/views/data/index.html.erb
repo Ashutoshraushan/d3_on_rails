@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+
+<body>
+
+<div id="graph1" class="aGraph" style="position:relative;width:100%;height:400px"></div>
+  <div>
+    Number of Lines:
+    <input id="linecount" name="lines" value="1" onkeyup="render()"></input>
+    Points per Line:
+    <input id="pointcount" name="points" value="20" onkeyup="render()"></input>
+  </div>
+
+<script>
+// first graph using line-graph.js
+
+
+
+     if(parent.document.getElementsByTagName("iframe")[0]) {
+       parent.document.getElementsByTagName("iframe")[0].setAttribute('style', 'height: 650px !important');
+     }
+  
+     
+     // add presentation logic for 'data' object using optional data arguments
+      var timeMS = new Date().getTime();
+      var data = {
+                "start": timeMS - (1000 * 60 * 5),
+                "end": timeMS,
+                "step": 1000,
+                "names": ["2xx"],
+                "values": [0]
+            };
+     data.values[0] = [0, 44, 34, 11, 53, 55, 21, 26, 50, 77, 90, 100, 120, 111, 27, 35, 45,66, 74, 35, 65, 43, 75, 57, 64, 54, 23, 36, 62, 63, 11, 23, 26, 27, 46, 66, 34, 37, 44, 23, 11, 4, 32, 11, 55,77, 43, 36, 75, 67, 54, 45, 13, 55, 87, 100,55, 32, 12, 43, 11, 45, 87, 65, 66, 45, 64, 30, 33, 21, 33, 15, 67, 43, 53, 53,-43, 15, -12, -20, -21, -55, -43, -56, -77, -98,87, 52, -65, 12, 35, 41, -85,15, -54, 54, 12, 41, 32, 23, 23, -3, 31, 12, -21, 12, 31,30,-30, -70, -90, 10, 2, 22, 45, 41, 68, 40, 26, 75, 23, 42, 42, 34,2, 34, 62, 62, 52, 32, 66, 5, 23, -43, 20,-32, 43, -34,43, -43,21, 35, 42, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 05, 0,50, 50, 0, 50, 0, 50, 0,50, 50, 05, 0,50, 50, 50, 05, 0,50, 50, 05,05, 0,50, 50, 05, 50, 50,20,30, 10, 15, 53, 52, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 00, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+     data["displayNames"] = ["2xx"];
+     data["colors"] = ["orange"];
+     data["scale"] = "linear";
+
+     // create graph now that we've added presentation config
+    var l1 = new LineGraph({containerId: 'graph1', data: data});
+     
+
+    
+  setInterval(function() {
+    /*
+    * The following will simulate live updating of the data
+    * This is being simulated so this example functions standalone without a backend server which generates data such as data.js contains.
+    */
+    // for each data series ...
+    var newData = [];
+    data.values.forEach(function(dataSeries, index) {
+      // take the first value and move it to the end
+      // and capture the value we're moving so we can send it to the graph as an update
+      var v = dataSeries.shift();
+      dataSeries.push(v);
+      // put this value in newData as an array with 1 value
+      newData[index] = [v];
+    })
+    
+    // we will reuse dataA each time
+    data.values = newData;
+    // increment time 1 step
+    data.start = data.start + data.step;
+    data.end = data.end + data.step; 
+          
+    l1.slideData(data);
+  }, 1000);
+
+    
+  </script>
+
+<script>
+// second graph direct implementation of d3
+var width = 960,
+    height = 500-37;
+
+var margin = {top: 20, right:20, bottom:20, left:50};
+
+// draw and append the container
+var svg = d3.select("body").append("svg")
+    .attr("height", height)
+    .attr("width", width)
+    .append("g")
+      .attr("transform","translate(" + margin.left + "," + margin.right + ")");
+
+var xScale = d3.scale.linear()
+      .range([0,width - margin.left - margin.right]);
+
+var yScale = d3.scale.linear()
+      .range([height - margin.top - margin.bottom,0]);
+
+var line = d3.svg.line().interpolate("linear")
+  .x(function(d){ return xScale(d.x); })
+  .y(function(d){ return yScale(d.y); });
+
+// create random data
+function newData(lineNumber, points){
+  return d3.range(lineNumber).map(function(){
+    return d3.range(points).map(function(item,idx){
+      return {x:idx/(points+5),y:Math.random()*100};
+    });
+  });
+}
+
+function render(){
+  // generate new data
+  var data = newData(+document.getElementById("linecount").value,+document.getElementById("pointcount").value);
+
+  // obtain absolute min and max
+  var yMin = data.reduce(function(pv,cv){
+    var currentMin = cv.reduce(function(pv,cv){
+      return Math.min(pv,cv.y);
+    },0)
+    return Math.min(pv,currentMin);
+  },0);
+  var yMax = data.reduce(function(pv,cv){
+    var currentMax = cv.reduce(function(pv,cv){
+      return Math.max(pv,cv.y);
+    },0)
+    return Math.max(pv,currentMax);
+  },0);
+
+  // set domain for axis
+  yScale.domain([yMin,yMax]);
+
+  // create axis scale
+  var yAxis = d3.svg.axis()
+      .scale(yScale).orient("left");
+
+  // if no axis exists, create one, otherwise update it
+  if (svg.selectAll(".y.axis")[0].length < 1 ){
+    svg.append("g")
+        .attr("class","y axis")
+        .call(yAxis);
+  } else {
+    svg.selectAll(".y.axis").transition().duration(1500).call(yAxis);
+  }
+
+  // generate line paths
+  var lines = svg.selectAll(".line").data(data).attr("class","line");
+
+  // transition from previous paths to new paths
+  lines.transition().duration(1500)
+    .attr("d",line)
+    .style("stroke", function(){
+      return '#'+Math.floor(Math.random()*16777215).toString(16);
+    });
+    
+  // enter any new data
+  lines.enter()
+    .append("path")
+    .attr("class","line")
+    .attr("d",line)
+    .style("stroke", function(){
+      return '#'+Math.floor(Math.random()*16777215).toString(16);
+    });
+
+  // exit
+  lines.exit()
+    .remove();
+}
+
+// initial page render
+render();
+
+// continuous page render
+setInterval(render, 1500);
+
+</script>
+</body>
+
+</html>
+
+
